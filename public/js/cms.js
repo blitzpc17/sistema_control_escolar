@@ -1,5 +1,4 @@
 (function(){
-  // ===== CSRF for AJAX
   function csrf(){
     return document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
   }
@@ -13,12 +12,6 @@
   function applyTheme(theme){
     document.body.setAttribute('data-theme', theme);
     localStorage.setItem('cms_theme', theme);
-    const isDark = theme === 'dark';
-    const icon = document.querySelector('#btnTheme i');
-    if(icon){
-      icon.classList.toggle('fa-moon', !isDark);
-      icon.classList.toggle('fa-sun', isDark);
-    }
   }
   function toggleTheme(){
     const current = document.body.getAttribute('data-theme') || 'light';
@@ -27,141 +20,109 @@
 
   // SIDEBAR
   function openSidebar(){
-    document.getElementById('sidebar')?.classList.add('open');
-    document.getElementById('overlay')?.classList.add('show');
+    $('#sidebar').addClass('open');
+    $('#overlay').addClass('show');
   }
   function closeSidebar(){
-    document.getElementById('sidebar')?.classList.remove('open');
-    document.getElementById('overlay')?.classList.remove('show');
+    $('#sidebar').removeClass('open');
+    $('#overlay').removeClass('show');
   }
   function setCollapsed(collapsed){
     if(isMobile()) return;
-    const sb = document.getElementById('sidebar');
-    if(!sb) return;
-    sb.classList.toggle('collapsed', !!collapsed);
+    $('#sidebar').toggleClass('collapsed', !!collapsed);
     localStorage.setItem('cms_sidebar_collapsed', collapsed ? '1' : '0');
-    if(collapsed){
-      document.querySelectorAll('.nav .nav-toggle').forEach(b => b.classList.remove('open'));
-    }
+    if(collapsed) $('.nav .nav-toggle').removeClass('open');
   }
   function toggleDesktopCollapse(){
     if(isMobile()) return;
-    const sb = document.getElementById('sidebar');
-    setCollapsed(!sb.classList.contains('collapsed'));
+    setCollapsed(!$('#sidebar').hasClass('collapsed'));
   }
 
-  function syncDesktopOverlay(){
-    const ov = document.getElementById('overlay');
-    const sb = document.getElementById('sidebar');
-    if(!ov || !sb) return;
+  // ✅ MODAL helpers (genérico)
+  function openModal($m){
+    $m.addClass('show');
+    $('body').css('overflow','hidden');
 
-    if(isMobile()){
-      ov.classList.toggle('show', sb.classList.contains('open'));
-      return;
-    }
-    const expanded = !sb.classList.contains('collapsed');
-    ov.classList.toggle('show', expanded);
+    // ✅ Si hay select2 dentro del modal, inicializa con dropdown dentro del modal (evita overlay/z-index)
+    $m.find('select.select2modal, select[data-select2modal="1"]').each(function(){
+      const $sel = $(this);
+      if($sel.data('select2')) return;
+      $sel.select2({ width:'100%', dropdownParent: $m.find('.dialog') });
+    });
+  }
+  function closeModal($m){
+    // destruir select2 modal
+    $m.find('select.select2modal, select[data-select2modal="1"]').each(function(){
+      if($(this).data('select2')) $(this).select2('destroy');
+    });
+
+    $m.removeClass('show');
+    $('body').css('overflow','auto');
   }
 
-  // SWEETALERT full (no toast)
-  function infoAlert(title, text){
-    return Swal.fire({ icon:'info', title, text, confirmButtonText:'OK' });
-  }
+  // GLOBALS
+  window.CMS = {
+    openModalById: function(id){ openModal($('#'+id)); },
+    closeModalById: function(id){ closeModal($('#'+id)); },
+    toggleTheme
+  };
 
   document.addEventListener('DOMContentLoaded', function(){
     // theme
     applyTheme(localStorage.getItem('cms_theme') || 'light');
 
-    // restore collapsed
-    const savedCollapsed = localStorage.getItem('cms_sidebar_collapsed') === '1';
-    if(!isMobile()) setCollapsed(savedCollapsed);
-
-    // nav toggles
-    document.getElementById('nav')?.addEventListener('click', function(e){
-      const btn = e.target.closest('.nav-toggle');
-      if(!btn) return;
-
-      // si está colapsado en desktop, al click expande y abre ese submenu
-      const sb = document.getElementById('sidebar');
-      if(!isMobile() && sb.classList.contains('collapsed')){
-        setCollapsed(false);
-        setTimeout(() => btn.classList.add('open'), 80);
-        return;
-      }
-      btn.classList.toggle('open');
-    });
+    // restore collapsed (desktop)
+    if(!isMobile()) setCollapsed(localStorage.getItem('cms_sidebar_collapsed') === '1');
 
     // hamburger
-    document.getElementById('btnHamburger')?.addEventListener('click', function(){
-      const sb = document.getElementById('sidebar');
+    $('#btnHamburger').on('click', function(){
       if(isMobile()){
-        sb.classList.contains('open') ? closeSidebar() : openSidebar();
+        $('#sidebar').hasClass('open') ? closeSidebar() : openSidebar();
       }else{
         toggleDesktopCollapse();
       }
     });
 
-    // dropdown
-    const dropbtn = document.getElementById('dropbtn');
-    const menu = document.getElementById('menu');
-    dropbtn?.addEventListener('click', function(e){
-      e.stopPropagation();
-      if(menu) menu.style.display = (menu.style.display === 'block' ? 'none' : 'block');
-    });
-    document.addEventListener('click', function(){
-      if(menu) menu.style.display = 'none';
-    });
-
-    // theme buttons
-    document.getElementById('btnTheme')?.addEventListener('click', function(e){
-      e.preventDefault();
-      toggleTheme();
-      if(menu) menu.style.display = 'none';
-    });
-    document.getElementById('menuTheme')?.addEventListener('click', function(e){
-      e.preventDefault();
-      toggleTheme();
-      if(menu) menu.style.display = 'none';
-    });
-
-    // click overlay: mobile cierra / desktop colapsa
-    document.getElementById('overlay')?.addEventListener('click', function(){
+    // overlay click
+    $('#overlay').on('click', function(){
       if(isMobile()) closeSidebar();
       else setCollapsed(true);
     });
 
-    // click fuera desktop => colapsar (cuando esté expandido)
-    document.addEventListener('click', function(e){
-      if(isMobile()) return;
-      const sb = document.getElementById('sidebar');
-      const clickedSidebar = e.target.closest('#sidebar');
-      const clickedHamb = e.target.closest('#btnHamburger');
-      if(!clickedSidebar && !clickedHamb){
-        if(sb && !sb.classList.contains('collapsed')) setCollapsed(true);
-      }
+    // dropdown
+    $('#dropbtn').on('click', function(e){ e.stopPropagation(); $('#menu').toggle(); });
+    $(document).on('click', function(){ $('#menu').hide(); });
+
+    // theme menu
+    $('#menuTheme, #btnTheme').on('click', function(e){
+      e.preventDefault();
+      toggleTheme();
+      $('#menu').hide();
     });
 
-    // observer para overlay
-    const sb = document.getElementById('sidebar');
-    if(sb){
-      const ob = new MutationObserver(syncDesktopOverlay);
-      ob.observe(sb, { attributes:true, attributeFilter:['class'] });
-    }
-    syncDesktopOverlay();
-
-    // resize rules
-    window.addEventListener('resize', function(){
-      if(isMobile()){
-        document.getElementById('sidebar')?.classList.remove('collapsed');
-        document.getElementById('overlay')?.classList.toggle('show', document.getElementById('sidebar')?.classList.contains('open'));
-      }else{
-        closeSidebar();
-        setCollapsed(localStorage.getItem('cms_sidebar_collapsed') === '1');
+    // nav toggles
+    $('#nav').on('click', '.nav-toggle', function(){
+      const $btn = $(this);
+      if(!isMobile() && $('#sidebar').hasClass('collapsed')){
+        setCollapsed(false);
+        setTimeout(() => $btn.addClass('open'), 80);
+        return;
       }
+      $btn.toggleClass('open');
     });
 
-    // demo
-    document.getElementById('btnQuickDemo1')?.addEventListener('click', () => infoAlert('Demo', 'Aquí conectas tu acción real.'));
-    document.getElementById('btnQuickDemo2')?.addEventListener('click', () => infoAlert('Demo', 'Aquí conectas exportación real.'));
+    // ✅ cierres de modal genéricos: cualquier elemento con data-close="1"
+    $(document).on('click', '[data-close="1"]', function(){
+      const $m = $(this).closest('.modal');
+      if($m.length) closeModal($m);
+    });
+
+    // ESC cierra modal
+    $(document).on('keydown', function(e){
+      if(e.key === 'Escape'){
+        const $m = $('.modal.show').last();
+        if($m.length) closeModal($m);
+      }
+    });
   });
 })();

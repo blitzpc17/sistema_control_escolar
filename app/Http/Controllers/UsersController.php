@@ -2,19 +2,22 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Role;
 use App\Models\User;
-use App\Support\ActivityLogger;
+use App\Models\Role;
+use App\Services\AuditService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 
 class UsersController extends Controller
 {
+    public function __construct(private AuditService $audit){}
+
     public function index()
     {
-        $users = User::with('role')
+        $users = User::query()
+            ->with('role')
             ->orderBy('id','desc')
-            ->paginate(15);
+            ->get();
 
         return view('users.index', compact('users'));
     }
@@ -22,34 +25,40 @@ class UsersController extends Controller
     public function create()
     {
         $roles = Role::where('is_active', true)->orderBy('name')->get();
-        return view('users.create', compact('roles'));
+        return view('users.form', ['user' => null, 'roles' => $roles]);
     }
 
     public function store(Request $request)
     {
         $data = $request->validate([
-            'role_id'  => ['required','integer','exists:roles,id'],
-            'name'     => ['required','string','max:120'],
-            'email'    => ['nullable','email','max:180','unique:users,email'],
+            'role_id' => ['required','integer'],
+            'name' => ['required','string','max:120'],
+            'email' => ['nullable','email','max:180','unique:users,email'],
             'username' => ['nullable','string','max:80','unique:users,username'],
-            'password' => ['required','string','min:8'],
-            'is_active'=> ['nullable','boolean'],
+            'password' => ['required','string','min:6'],
+            'is_active' => ['nullable'],
         ]);
 
         $data['password'] = Hash::make($data['password']);
         $data['is_active'] = (bool)($data['is_active'] ?? true);
 
-        $user = User::create($data);
+        $u = User::create($data);
 
-        ActivityLogger::log(auth()->id(), 'CREATE', 'users', 'users', $user->id, null, $user->toArray());
+        $this->audit->log([
+            'user_id' => $request->user()->id,
+            'action' => 'CREATE',
+            'entity_table' => 'users',
+            'entity_id' => $u->id,
+            'after' => $u->toArray(),
+        ]);
 
-        return redirect()->route('users.index')->with('ok', 'Usuario creado.');
+        return redirect()->route('users.index')->with('ok','Usuario creado');
     }
 
     public function edit(User $user)
     {
         $roles = Role::where('is_active', true)->orderBy('name')->get();
-        return view('users.edit', compact('user','roles'));
+        return view('users.form', compact('user','roles'));
     }
 
     public function update(Request $request, User $user)
@@ -57,39 +66,51 @@ class UsersController extends Controller
         $before = $user->toArray();
 
         $data = $request->validate([
-            'role_id'  => ['required','integer','exists:roles,id'],
-            'name'     => ['required','string','max:120'],
-            'email'    => ['nullable','email','max:180','unique:users,email,'.$user->id],
+            'role_id' => ['required','integer'],
+            'name' => ['required','string','max:120'],
+            'email' => ['nullable','email','max:180','unique:users,email,'.$user->id],
             'username' => ['nullable','string','max:80','unique:users,username,'.$user->id],
-            'password' => ['nullable','string','min:8'],
-            'is_active'=> ['nullable','boolean'],
+            'password' => ['nullable','string','min:6'],
+            'is_active' => ['nullable'],
         ]);
 
-        if (!empty($data['password'])) {
-            $data['password'] = Hash::make($data['password']);
-        } else {
-            unset($data['password']);
-        }
+        if (!empty($data['password'])) $data['password'] = Hash::make($data['password']);
+        else unset($data['password']);
 
-        $data['is_active'] = (bool)($data['is_active'] ?? false);
+        $data['is_active'] = (bool)($data['is_active'] ?? $user->is_active);
 
         $user->update($data);
 
-        ActivityLogger::log(auth()->id(), 'UPDATE', 'users', 'users', $user->id, $before, $user->fresh()->toArray());
+        $this->audit->log([
+            'user_id' => $request->user()->id,
+            'action' => 'UPDATE',
+            'entity_table' => 'users',
+            'entity_id' => $user->id,
+            'before' => $before,
+            'after' => $user->fresh()->toArray(),
+        ]);
 
-        return redirect()->route('users.index')->with('ok', 'Usuario actualizado.');
+        return redirect()->route('users.index')->with('ok','Usuario actualizado');
     }
 
-    public function destroy(User $user)
+    public function destroy(Request $request, User $user)
     {
         $before = $user->toArray();
 
-        // Baja lógica: usa SoftDeletes (deleted_at) y/o is_active=false
-        $user->update(['is_active' => false]);
-        $user->delete();
+        $user->update([
+            'is_active' => false,
+            'deleted_at' => now(),
+        ]);
 
-        ActivityLogger::log(auth()->id(), 'DELETE', 'users', 'users', $user->id, $before, ['is_active'=>false,'deleted_at'=>now()]);
+        $this->audit->log([
+            'user_id' => $request->user()->id,
+            'action' => 'DELETE', // baja lógica (pero acción DELETE para auditar)
+            'entity_table' => 'users',
+            'entity_id' => $user->id,
+            'before' => $before,
+            'after' => $user->fresh()->toArray(),
+        ]);
 
-        return back()->with('ok', 'Usuario dado de baja.');
+        return redirect()->route('users.index')->with('ok','Usuario dado de baja');
     }
 }

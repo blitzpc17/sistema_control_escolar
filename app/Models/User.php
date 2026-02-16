@@ -4,19 +4,15 @@ namespace App\Models;
 
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
-use Illuminate\Database\Eloquent\SoftDeletes;
 
 class User extends Authenticatable
 {
-    use Notifiable, SoftDeletes;
+    use Notifiable;
 
     protected $table = 'users';
-    protected $primaryKey = 'id';
-
-    const DELETED_AT = 'deleted_at';
 
     protected $fillable = [
-        'role_id','name','email','username','password','is_active','remember_token'
+        'role_id','name','email','username','password','is_active','remember_token','deleted_at'
     ];
 
     protected $hidden = ['password','remember_token'];
@@ -29,5 +25,10 @@ class User extends Authenticatable
     public function role()
     {
         return $this->belongsTo(Role::class, 'role_id');
+    }
+
+    public function permissions()
+    {
+        return $this->hasMany(UserPermission::class, 'user_id');
     }
 }

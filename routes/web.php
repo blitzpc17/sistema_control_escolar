@@ -41,11 +41,10 @@ Route::post('/logout', [LoginController::class, 'logout'])
     ->middleware('auth')
     ->name('logout');
 
-
 // =====================
-// APP (AUTH + MÓDULO GLOBAL)
+// APP (AUTH + MENU + AUDIT)
 // =====================
-Route::middleware(['auth', 'module.access.audit'])->group(function () {
+Route::middleware(['auth', 'share.menu', 'module.access.audit'])->group(function () {
 
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 

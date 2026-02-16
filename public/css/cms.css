@@ -438,3 +438,238 @@ body{
   }
   .sidebar.open{ transform: translateX(0); }
 }
+
+/* =========================
+   FORMS (grid) + inputs
+========================= */
+.form{
+  display:grid;
+  grid-template-columns: repeat(12, 1fr);
+  gap: 12px;
+  margin-top: 10px;
+}
+.field{ grid-column: span 6; min-width:0; }
+.field.col-4{ grid-column: span 4; }
+.field.col-8{ grid-column: span 8; }
+.field.col-12{ grid-column: span 12; }
+
+label{
+  display:block;
+  font-size:12px;
+  color: var(--muted);
+  margin: 0 0 6px;
+  font-weight:600;
+}
+
+input, select, textarea{
+  width:100%;
+  padding: 12px 12px;
+  border-radius: 16px;
+  border:1px solid var(--border);
+  background: var(--panel);
+  color: var(--text);
+  outline:none;
+  transition: .12s ease;
+}
+textarea{ resize: vertical; min-height: 90px; }
+input:focus, select:focus, textarea:focus{
+  border-color: rgba(101,191,191,.55);
+  box-shadow: 0 0 0 4px var(--ring);
+}
+
+.form-footer{
+  display:flex;
+  justify-content:flex-end;
+  gap:10px;
+  grid-column: span 12;
+  padding-top: 6px;
+}
+
+/* Responsive forms */
+@media (max-width: 720px){
+  .field{ grid-column: span 12; }
+  .field.col-4, .field.col-8{ grid-column: span 12; }
+}
+
+
+/* =========================
+   TABLE WRAP + DATATABLES look
+========================= */
+.table-wrap{
+  overflow:auto;
+  border-radius: 18px;
+  border:1px solid var(--border);
+  background: var(--panel);
+  box-shadow: var(--shadow2);
+  padding: 8px;
+}
+[data-theme="dark"] .table-wrap{
+  background: var(--surface) !important;
+  border-color: var(--floatBorder) !important;
+}
+
+/* DataTables typography */
+table.dataTable{ width:100% !important; border-collapse: collapse !important; }
+table.dataTable thead th{
+  font-size: 12px; color: var(--muted);
+  border-bottom: 1px solid var(--border) !important;
+  padding: 12px 10px !important;
+  background: transparent !important;
+}
+table.dataTable tbody td{
+  border-bottom: 1px solid var(--border) !important;
+  padding: 12px 10px !important;
+  font-size: 13px;
+  vertical-align: middle;
+}
+
+/* inputs datatable */
+.dataTables_wrapper .dataTables_filter input,
+.dataTables_wrapper .dataTables_length select{
+  border-radius: 14px !important;
+  border:1px solid var(--border) !important;
+  background: var(--panel) !important;
+  color: var(--text) !important;
+  outline:none;
+  padding: 8px 10px !important;
+}
+[data-theme="dark"] .dataTables_wrapper .dataTables_filter input,
+[data-theme="dark"] .dataTables_wrapper .dataTables_length select{
+  background: var(--surface) !important;
+  border-color: var(--floatBorder) !important;
+}
+
+.dataTables_wrapper .dataTables_info,
+.dataTables_wrapper .dataTables_paginate{
+  color: var(--muted) !important;
+  font-size: 12px !important;
+  padding-top: 10px !important;
+}
+
+.dataTables_wrapper .dataTables_paginate .paginate_button{
+  border-radius: 12px !important;
+  border: 1px solid var(--border) !important;
+  background: var(--panel) !important;
+  color: var(--text) !important;
+  margin: 0 2px !important;
+}
+[data-theme="dark"] .dataTables_wrapper .dataTables_paginate .paginate_button{
+  background: var(--surface) !important;
+  border-color: var(--floatBorder) !important;
+}
+.dataTables_wrapper .dataTables_paginate .paginate_button.current{
+  background: linear-gradient(135deg, var(--brand), var(--brand2)) !important;
+  color:#fff !important;
+  border-color: rgba(0,0,0,.08) !important;
+}
+[data-theme="dark"] .dataTables_wrapper .dataTables_paginate .paginate_button.current{
+  color:#061018 !important;
+}
+
+/* =========================
+   BUTTONS outline (acciones tabla)
+========================= */
+.btn.outline{
+  background: transparent !important;
+  border-color: color-mix(in srgb, var(--brand) 25%, var(--border)) !important;
+}
+.btn.outline i{ color: color-mix(in srgb, var(--brand) 85%, var(--text)); }
+.btn.outline:hover{
+  background: color-mix(in srgb, var(--brand2) 18%, transparent) !important;
+  border-color: color-mix(in srgb, var(--brand2) 60%, var(--border)) !important;
+  box-shadow: var(--shadow2);
+  transform: translateY(-1px) scale(1.01);
+}
+.btn.outline.danger{ border-color: rgba(231,76,60,.45) !important; }
+.btn.outline.danger i{ color: rgba(231,76,60,.95); }
+.btn.outline.danger:hover{
+  background: rgba(231,76,60,.12) !important;
+  border-color: rgba(231,76,60,.70) !important;
+  box-shadow: 0 10px 28px rgba(231,76,60,.18);
+}
+
+
+/* =========================
+   MODAL (lo que te falta)
+========================= */
+.modal{
+  position:fixed;
+  inset:0;
+  display:none;          /* IMPORTANT */
+  place-items:center;
+  padding: 16px;
+  z-index: 9999;
+}
+.modal.show{ display:grid; }
+
+.modal .backdrop{
+  position:absolute;
+  inset:0;
+  background: rgba(0,0,0,.45);
+}
+
+.modal .dialog{
+  position:relative;
+  width: min(980px, 100%);
+  max-height: min(86vh, 980px);
+  overflow:auto;
+  background: var(--panel);
+  border:1px solid var(--border);
+  border-radius: 22px;
+  box-shadow: var(--shadow);
+  padding: 14px;
+}
+[data-theme="dark"] .modal .dialog{
+  background: var(--surface) !important;
+  border-color: var(--floatBorder) !important;
+}
+
+.modal .dialog-head{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+  padding: 6px 6px 10px;
+  border-bottom:1px solid var(--border);
+  margin-bottom: 10px;
+}
+.modal .dialog-head b{ font-size:14px; }
+
+.modal .close{
+  width:42px; height:42px;
+  border-radius: 16px;
+  border:1px solid var(--border);
+  background: var(--panel);
+  cursor:pointer;
+  display:grid; place-items:center;
+  transition: .16s ease;
+}
+[data-theme="dark"] .modal .close i{
+  color: rgba(255,255,255,.92) !important; /* X blanco */
+}
+.modal .close i{ transition:.16s ease; }
+.modal .close:hover{
+  background: rgba(231,76,60,.14) !important;
+  border-color: rgba(231,76,60,.45) !important;
+  box-shadow: 0 10px 28px rgba(231,76,60,.18) !important;
+}
+.modal .close:hover i{ color: var(--danger) !important; }
+
+
+/* =========================
+   SELECT2 dropdown fix (si lo usas)
+========================= */
+.select2-container{ z-index: 10000 !important; }
+.select2-dropdown{
+  z-index: 10001 !important;
+  border-radius: 16px !important;
+  border: 1px solid var(--border) !important;
+  background: var(--panel) !important;
+  overflow:hidden !important;
+  box-shadow: var(--shadow) !important;
+}
+[data-theme="dark"] .select2-dropdown{
+  background: var(--float) !important;
+  border-color: var(--floatBorder) !important;
+}
+
