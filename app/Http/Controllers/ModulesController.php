@@ -10,15 +10,12 @@ class ModulesController extends Controller
 {
     public function __construct(private AuditService $audit){}
 
-    public function index()
-    {
-        $modules = Module::query()
-            ->orderBy('parent_id')
-            ->orderBy('sort_order')
-            ->get();
-
-        return view('modules.index', compact('modules'));
+    public function index(){
+        $modules = Module::with('parent')->orderBy('id','desc')->get();
+        $parents = Module::whereNull('parent_id')->where('is_active',true)->orderBy('name')->get();
+        return view('modules.index', compact('modules','parents'));
     }
+
 
     public function create()
     {

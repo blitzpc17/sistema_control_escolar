@@ -10,16 +10,12 @@ use Illuminate\Support\Facades\Hash;
 
 class UsersController extends Controller
 {
-    public function __construct(private AuditService $audit){}
+    public function __construct(private AuditService $audit){}    
 
-    public function index()
-    {
-        $users = User::query()
-            ->with('role')
-            ->orderBy('id','desc')
-            ->get();
-
-        return view('users.index', compact('users'));
+    public function index(){
+        $users = User::with('role')->orderBy('id','desc')->get();
+        $roles = Role::where('is_active',true)->orderBy('name')->get();
+        return view('users.index', compact('users','roles'));
     }
 
     public function create()

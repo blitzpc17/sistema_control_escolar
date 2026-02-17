@@ -1,4 +1,3 @@
-{{-- resources/views/users/index.blade.php --}}
 @extends('layouts.app')
 
 @section('title','Usuarios')
@@ -36,16 +35,15 @@
       @foreach($users as $u)
         @php
           $payload = [
-            'id'        => $u->id,
-            'name'      => $u->name,
-            'username'  => $u->username,
-            'email'     => $u->email,
-            'role_id'   => $u->role_id,
-            'is_active' => $u->is_active ? 1 : 0,
+            "id" => $u->id,
+            "name" => $u->name,
+            "username" => $u->username,
+            "email" => $u->email,
+            "role_id" => $u->role_id,
+            "is_active" => $u->is_active ? 1 : 0,
           ];
         @endphp
-
-        <tr data-json="{{ e(json_encode($payload)) }}">
+        <tr data-json='@json($payload, JSON_UNESCAPED_UNICODE)'>
           <td>{{ $u->id }}</td>
           <td>{{ $u->name }}</td>
           <td>{{ $u->username }}</td>
@@ -58,8 +56,7 @@
             </button>
 
             <form id="del-user-{{ $u->id }}" action="{{ route('users.destroy',$u->id) }}" method="POST" style="display:inline;">
-              @csrf
-              @method('DELETE')
+              @csrf @method('DELETE')
               <button type="button" class="btn outline danger" style="padding:8px 10px;border-radius:12px"
                 onclick="confirmBaja('del-user-{{ $u->id }}','¿Dar de baja usuario?','{{ $u->name }}')">
                 <i class="fa-regular fa-trash-can"></i>
@@ -84,7 +81,6 @@
 
     <form id="frmUser" method="POST" action="{{ route('users.store') }}" class="form" autocomplete="off">
       @csrf
-      <input type="hidden" id="u_id" value="">
 
       <div class="field col-6">
         <label>Nombre</label>
@@ -94,7 +90,7 @@
       <div class="field col-6">
         <label>Rol</label>
         <select name="role_id" id="u_role" required>
-          @foreach(\App\Models\Role::where('is_active',true)->orderBy('name')->get() as $r)
+          @foreach($roles as $r)
             <option value="{{ $r->id }}">{{ $r->name }}</option>
           @endforeach
         </select>
@@ -150,18 +146,18 @@
   function openModal(){ $('#mdlUser').addClass('show'); $('body').css('overflow','hidden'); }
   function closeModal(){ $('#mdlUser').removeClass('show'); $('body').css('overflow','auto'); }
 
-  // cerrar (backdrop + X + botones con data-close)
-  $('#mdlUser').on('click','[data-close="1"]', closeModal);
+  $('#mdlUser [data-close="1"]').on('click', closeModal);
 
   $('#btnNew').on('click', function(){
     $('#mdlTitle').text('Nuevo usuario');
     $('#frmUser').attr('action', @json(route('users.store')));
     $('#frmUser').find('input[name="_method"]').remove();
-    $('#u_password').prop('required', true);
+    $('#u_password').prop('required', true).val('');
 
-    $('#u_name,#u_username,#u_email,#u_password').val('');
+    $('#u_name,#u_username,#u_email').val('');
     $('#u_role').val($('#u_role option:first').val());
     $('#u_active').val('1');
+
     openModal();
   });
 
@@ -171,22 +167,19 @@
 
     $('#mdlTitle').text('Editar usuario #' + data.id);
     $('#frmUser').attr('action', @json(url('/users')) + '/' + data.id);
-
     if(!$('#frmUser input[name="_method"]').length){
       $('#frmUser').append('<input type="hidden" name="_method" value="PUT">');
     }
-
-    // en edición, password NO obligatorio (solo si cambias)
     $('#u_password').prop('required', false).val('');
 
     $('#u_name').val(data.name || '');
     $('#u_username').val(data.username || '');
     $('#u_email').val(data.email || '');
-    $('#u_role').val(String(data.role_id || ''));
-    $('#u_active').val(String(data.is_active ?? 1));
+    $('#u_role').val(String(data.role_id));
+    $('#u_active').val(String(data.is_active));
+
     openModal();
   });
-
 })();
 </script>
 @endpush
